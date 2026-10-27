@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ember &amp; Oak — Product</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">Ember <span>&amp;</span> Oak</a>
+    <a href="/cart">Cart (<span id="cart-count">0</span>)</a>
+  </header>
+  <main class="wrap">
+    <div class="product" id="product"></div>
+  </main>
+  <footer>Ember &amp; Oak is a fictional demo store. Payments run in the PayPal sandbox.</footer>
+  <script src="/store.js"></script>
+  <script>
+    const id = location.pathname.split("/").pop();
+    fetch(`/api/products/${id}`).then((r) => r.json()).then((p) => {
+      document.title = `Ember & Oak — ${p.title}`;
+      document.getElementById("product").innerHTML = `
+        <img src="${p.image}" alt="${p.title}">
+        <div>
+          <p>${p.category}</p>
+          <h1>${p.title}</h1>
+          <p class="price">$${p.price}</p>
+          <p>${p.description}</p>
+          <p>${p.stock} in stock · Ships in 2 business days</p>
+          <button class="btn" id="add">Add to cart</button>
+          <a class="btn secondary" href="/cart">View cart</a>
+        </div>`;
+      document.getElementById("add").onclick = () => {
+        addToCart(p);
+        location.href = "/cart";
+      };
+    });
+  </script>
+</body>
+</html>

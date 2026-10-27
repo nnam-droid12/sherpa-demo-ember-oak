@@ -1,0 +1,89 @@
+:root {
+  --ink: #1d2320;
+  --bark: #5b3b24;
+  --ember: #c4521d;
+  --moss: #3f5a3a;
+  --paper: #f6f1e8;
+  --line: #e2d9c9;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  color: var(--ink);
+  background: var(--paper);
+  line-height: 1.55;
+}
+
+a { color: var(--moss); }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 28px;
+  background: var(--ink);
+  color: var(--paper);
+}
+.topbar a { color: var(--paper); text-decoration: none; }
+.brand { font-size: 1.4rem; letter-spacing: 0.04em; }
+.brand span { color: var(--ember); }
+
+.wrap { max-width: 1100px; margin: 0 auto; padding: 28px; }
+
+.hero {
+  padding: 48px 28px;
+  background: linear-gradient(120deg, #2c3a2a, #5b3b24);
+  color: var(--paper);
+}
+.hero h1 { margin: 0 0 8px; font-size: 2.4rem; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 22px; }
+.card { background: #fff; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.card img { width: 100%; height: 180px; object-fit: cover; background: #efe7da; display: block; }
+.card .body { padding: 14px 16px; }
+.card h3 { margin: 0 0 6px; font-size: 1.05rem; }
+.price { font-weight: bold; color: var(--bark); }
+
+.btn {
+  display: inline-block;
+  border: 0;
+  border-radius: 6px;
+  padding: 11px 18px;
+  background: var(--ember);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn.secondary { background: var(--moss); }
+
+.product { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+.product img { width: 100%; border-radius: 10px; background: #efe7da; }
+
+.cart-table { width: 100%; border-collapse: collapse; background: #fff; }
+.cart-table td, .cart-table th { padding: 12px; border-bottom: 1px solid var(--line); text-align: left; }
+
+.panel { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 18px 22px; margin: 22px 0; }
+.panel h3 { margin-top: 0; }
+
+.checkout-actions { margin: 28px 0 60px; padding: 22px; background: #fff; border: 1px solid var(--line); border-radius: 10px; }
+#paypal-button-container { max-width: 420px; }
+
+footer { padding: 28px; color: #6f6656; font-size: 0.9rem; text-align: center; }
+
+@media (max-width: 720px) {
+  .product { grid-template-columns: 1fr; }
+  .wrap { padding: 18px; }
+}
+
+/* Compact the summary area on small phones. */
+@media (max-width: 414px) {
+  .checkout-actions {
+    height: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+}

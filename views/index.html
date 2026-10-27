@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ember &amp; Oak — Outdoor Gear</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">Ember <span>&amp;</span> Oak</a>
+    <a href="/cart">Cart (<span id="cart-count">0</span>)</a>
+  </header>
+  <section class="hero">
+    <h1>Gear for the long way round.</h1>
+    <p>Tents, packs and camp kit built for weekends that turn into weeks.</p>
+  </section>
+  <main class="wrap">
+    <h2>Shop the collection</h2>
+    <div class="grid" id="products"></div>
+  </main>
+  <footer>Ember &amp; Oak is a fictional demo store. Payments run in the PayPal sandbox.</footer>
+  <script src="/store.js"></script>
+  <script>
+    fetch("/api/products").then((r) => r.json()).then((products) => {
+      document.getElementById("products").innerHTML = products.map((p) => `
+        <article class="card">
+          <a href="/product/${p.id}"><img src="${p.image}" alt="${p.title}"></a>
+          <div class="body">
+            <h3><a href="/product/${p.id}">${p.title}</a></h3>
+            <p class="price">$${p.price}</p>
+          </div>
+        </article>`).join("");
+    });
+  </script>
+</body>
+</html>

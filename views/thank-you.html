@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ember &amp; Oak — Thank you</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">Ember <span>&amp;</span> Oak</a>
+    <a href="/cart">Cart (<span id="cart-count">0</span>)</a>
+  </header>
+  <main class="wrap">
+    <h1>Thank you for your order</h1>
+    <p>Your PayPal order <strong id="order"></strong> is confirmed. We will email you when it ships.</p>
+    <a class="btn" href="/">Back to the shop</a>
+  </main>
+  <script src="/store.js"></script>
+  <script>
+    document.getElementById("order").textContent = new URLSearchParams(location.search).get("order") || "";
+  </script>
+</body>
+</html>

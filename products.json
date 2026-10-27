@@ -1,0 +1,56 @@
+[
+  {
+    "id": "ridgeline-2p-tent",
+    "title": "Ridgeline 2P Alpine Tent",
+    "description": "A four-season, two-person tent with a storm-ready aluminium frame and two vestibules.",
+    "price": "349.00",
+    "image": "/img/tent.svg",
+    "category": "Shelter",
+    "stock": 14
+  },
+  {
+    "id": "summit-65-pack",
+    "title": "Summit 65L Expedition Pack",
+    "description": "Load-carrying backpack with an adjustable torso, hip-belt pockets and a waterproof base.",
+    "price": "229.00",
+    "image": "/img/pack.svg",
+    "category": "Packs",
+    "stock": 22
+  },
+  {
+    "id": "cinder-down-bag",
+    "title": "Cinder 15°F Down Sleeping Bag",
+    "description": "800-fill responsibly sourced down, draft collar and a full-length two-way zip.",
+    "price": "289.00",
+    "image": "/img/bag.svg",
+    "category": "Sleep",
+    "stock": 9
+  },
+  {
+    "id": "kindle-camp-stove",
+    "title": "Kindle Two-Burner Camp Stove",
+    "description": "Wind-shielded propane stove with independent simmer control on each burner.",
+    "price": "89.00",
+    "image": "/img/stove.svg",
+    "category": "Kitchen",
+    "stock": 40
+  },
+  {
+    "id": "trailmark-headlamp",
+    "title": "Trailmark 400 Headlamp",
+    "description": "Rechargeable 400-lumen headlamp with red night mode and lockout.",
+    "price": "39.00",
+    "image": "/img/lamp.svg",
+    "category": "Lighting",
+    "stock": 75
+  },
+  {
+    "id": "oakleaf-flannel",
+    "title": "Oakleaf Heavyweight Flannel",
+    "description": "Brushed organic cotton flannel shirt cut for layering at camp.",
+    "price": "68.00",
+    "image": "/img/flannel.svg",
+    "category": "Apparel",
+    "stock": 31
+  }
+]

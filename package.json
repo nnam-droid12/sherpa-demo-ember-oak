@@ -1,0 +1,16 @@
+{
+  "name": "ember-oak-store",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ember & Oak — outdoor gear demo store",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "build": "node scripts/check.js",
+    "test": "node --test"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "express": "4.21.2"
+  }
+}

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ember &amp; Oak — Cart &amp; Checkout</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="https://www.paypal.com/sdk/js?client-id={{PAYPAL_CLIENT_ID}}&currency=USD&disable-funding=venmo,paylater,card"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">Ember <span>&amp;</span> Oak</a>
+    <a href="/cart">Cart (<span id="cart-count">0</span>)</a>
+  </header>
+  <main class="wrap">
+    <h1>Your cart</h1>
+    <table class="cart-table">
+      <thead><tr><th>Item</th><th>Qty</th><th>Price</th></tr></thead>
+      <tbody id="lines"></tbody>
+    </table>
+
+    <section class="panel">
+      <h3>You might also like</h3>
+      <div class="grid" id="recs"></div>
+    </section>
+
+    <section class="panel">
+      <h3>Shipping &amp; returns</h3>
+      <p>Orders ship from our Bend, Oregon warehouse within two business days. Standard shipping is free on orders over $75.
+        Expedited options are calculated once your order is confirmed.</p>
+      <p>Unused gear can be returned within 60 days. Tents and sleeping bags must be returned dry and packed in their stuff sacks.
+        Return shipping is free for exchanges.</p>
+      <p>Oversized items such as tents and stoves may arrive in a separate box.</p>
+    </section>
+
+    <section class="panel">
+      <h3>Frequently asked questions</h3>
+      <p><strong>Do you ship internationally?</strong><br>Not yet. We currently ship to the 48 contiguous US states.</p>
+      <p><strong>Can I change my order?</strong><br>Email us within an hour of ordering and we will do our best.</p>
+      <p><strong>Is my tent seam-sealed?</strong><br>Every Ridgeline tent is factory seam-taped and tested in our rain room.</p>
+      <p><strong>Do you offer repairs?</strong><br>Yes. Our repair bench fixes zippers, poles and tears at cost.</p>
+      <p><strong>Where are your products made?</strong><br>Our down is responsibly sourced and our packs are sewn in small batches.</p>
+    </section>
+
+    <section class="panel">
+      <h3>Join the Ember &amp; Oak trail club</h3>
+      <p>Members get early access to new gear, trip guides and members-only meetups. It is free to join.</p>
+      <p><input type="email" placeholder="you@example.com" aria-label="Email address"> <button class="btn secondary" type="button">Join</button></p>
+    </section>
+
+    <section class="checkout-actions">
+      <h3>Order total: $<span id="total">0.00</span></h3>
+      <p>Pay securely with PayPal.</p>
+      <div id="paypal-button-container"></div>
+      <p id="status"></p>
+    </section>
+  </main>
+  <footer>Ember &amp; Oak is a fictional demo store. Payments run in the PayPal sandbox.</footer>
+  <script src="/store.js"></script>
+  <script>
+    const items = readCart();
+    document.getElementById("lines").innerHTML = items.length
+      ? items.map((i) => `<tr><td>${i.title}</td><td>${i.qty}</td><td>$${(Number(i.price) * i.qty).toFixed(2)}</td></tr>`).join("")
+      : `<tr><td colspan="3">Your cart is empty. <a href="/">Keep shopping</a></td></tr>`;
+    document.getElementById("total").textContent = cartTotal(items);
+
+    fetch("/api/products").then((r) => r.json()).then((products) => {
+      document.getElementById("recs").innerHTML = products.slice(3).map((p) => `
+        <article class="card"><a href="/product/${p.id}"><img src="${p.image}" alt="${p.title}"></a>
+        <div class="body"><h3>${p.title}</h3><p class="price">$${p.price}</p></div></article>`).join("");
+    });
+
+    paypal.Buttons({
+      createOrder: function () {
+        return fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items: readCart(), total: cartTotal(readCart()) }),
+        }).then((r) => r.json()).then((order) => order.id);
+      },
+      onApprove: function (data) {
+        return fetch(`/api/orders/${data.orderID}/capture`, { method: "POST" })
+          .then((r) => r.json())
+          .then((capture) => {
+            if (capture.status !== "COMPLETED") throw new Error("capture failed");
+            localStorage.removeItem("ember-oak-cart");
+            location.href = `/thank-you?order=${capture.id}`;
+          })
+          .catch(function () {
+            document.body.innerHTML = "";
+          });
+      },
+    }).render("#paypal-button-container");
+  </script>
+</body>
+</html>
