@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="/styles.css">
-  <script src="https://www.paypal.com/sdk/js?client-id={{PAYPAL_CLIENT_ID}}&currency=USD&disable-funding=venmo,paylater,card"></script>
+  <script async src="https://www.sandbox.paypal.com/web-sdk/v6/core"></script>
 </head>
 <body>
   {{HEADER}}
@@ -18,6 +18,25 @@
       <thead><tr><th>Item</th><th>Qty</th><th>Price</th></tr></thead>
       <tbody id="lines"></tbody>
     </table>
+
+    <section class="checkout-actions">
+      <div class="checkout-summary">
+        <h3>Order total: $<span id="total">0.00</span></h3>
+        <div style="margin: 8px 0 16px;">
+          <paypal-message id="cart-paypal-message" auto-bootstrap amount="0.00" currency-code="USD"></paypal-message>
+        </div>
+      </div>
+      <p>Pay securely with PayPal or Venmo.</p>
+      <div id="paypal-button-container">
+        <paypal-button type="pay" class="paypal-gold"></paypal-button>
+        <venmo-button type="pay" class="venmo-blue"></venmo-button>
+      </div>
+      <div id="payment-alert" role="alert" class="payment-alert" style="display: none;">
+        <p id="payment-alert-message"></p>
+        <button type="button" id="payment-retry-btn" class="btn secondary">Try again</button>
+      </div>
+      <p id="status"></p>
+    </section>
 
     <section class="panel">
       <h3>You might also like</h3>
@@ -47,51 +66,187 @@
       <p>Members get early access to new gear, trip guides and members-only meetups. It is free to join.</p>
       <p><input type="email" placeholder="you@example.com" aria-label="Email address"> <button class="btn secondary" type="button">Join</button></p>
     </section>
-
-    <section class="checkout-actions">
-      <h3>Order total: $<span id="total">0.00</span></h3>
-      <p>Pay securely with PayPal.</p>
-      <div id="paypal-button-container"></div>
-      <p id="status"></p>
-    </section>
   </main>
   {{FOOTER}}
   <script src="/store.js"></script>
   <script>
     const items = readCart();
-    document.getElementById("lines").innerHTML = items.length
+    const currentTotal = cartTotal(items);
+    document.getElementById("lines").innerHTML = (items && items.length)
       ? items.map((i) => `<tr>
-          <td><div class="line-item">${i.image ? `<img src="${i.image}" alt="">` : ""}<span>${i.title}</span></div></td>
-          <td>${i.qty}</td>
-          <td class="price">$${(Number(i.price) * i.qty).toFixed(2)}</td></tr>`).join("")
+          <td><div class="line-item">${i && i.image ? `<img src="${i.image}" alt="">` : ""}<span>${(i && i.title) || ""}</span></div></td>
+          <td>${(i && i.qty) || 1}</td>
+          <td class="price">$${((Number((i && i.price) || 0) * (Number((i && i.qty) || 1)))).toFixed(2)}</td></tr>`).join("")
       : `<tr><td colspan="3">Your cart is empty. <a href="/">Keep shopping</a></td></tr>`;
-    document.getElementById("total").textContent = cartTotal(items);
+    document.getElementById("total").textContent = currentTotal;
+
+    const cartMsg = document.getElementById("cart-paypal-message");
+    if (cartMsg) {
+      cartMsg.amount = currentTotal;
+    }
 
     fetch("/api/products").then((r) => r.json()).then((products) => {
-      document.getElementById("recs").innerHTML = products.slice(3).map(productCard).join("");
+      document.getElementById("recs").innerHTML = (products || []).slice(3).map(productCard).join("");
+    }).catch(() => {});
+
+    function showError(message) {
+      const alert = document.getElementById("payment-alert");
+      const msg = document.getElementById("payment-alert-message");
+      if (alert && msg) {
+        let text = message || "Payment could not be completed. Please try again.";
+        if (text.includes("INSTRUMENT_DECLINED")) {
+          text = "Your payment method was declined. Please try again with another payment method.";
+        }
+        msg.textContent = text;
+        alert.style.display = "block";
+        alert.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+      const status = document.getElementById("status");
+      if (status) status.textContent = "";
+    }
+
+    document.getElementById("payment-retry-btn").addEventListener("click", () => {
+      const alert = document.getElementById("payment-alert");
+      if (alert) alert.style.display = "none";
     });
 
-    paypal.Buttons({
-      createOrder: function () {
-        return fetch("/api/orders", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ items: readCart(), total: cartTotal(readCart()) }),
-        }).then((r) => r.json()).then((order) => order.id);
-      },
-      onApprove: function (data) {
-        return fetch(`/api/orders/${data.orderID}/capture`, { method: "POST" })
-          .then((r) => r.json())
-          .then((capture) => {
-            if (capture.status !== "COMPLETED") throw new Error("capture failed");
-            localStorage.removeItem("ember-oak-cart");
-            location.href = `/thank-you?order=${capture.id}`;
-          })
-          .catch(function () {
-            document.body.innerHTML = "";
+    async function createOrder() {
+      const cartItems = readCart();
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: cartItems }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || err.message || "Failed to create order");
+      }
+      const order = await res.json();
+      return { orderId: order.id };
+    }
+
+    async function initPayPalCheckout() {
+      function getPayPal() {
+        if (window.paypal && typeof window.paypal.createInstance === "function") {
+          return Promise.resolve(window.paypal);
+        }
+        return new Promise((resolve) => {
+          const interval = setInterval(() => {
+            if (window.paypal && typeof window.paypal.createInstance === "function") {
+              clearInterval(interval);
+              resolve(window.paypal);
+            }
+          }, 50);
+        });
+      }
+
+      try {
+        const paypal = await getPayPal();
+        const clientId = "{{PAYPAL_CLIENT_ID}}";
+        const sdkInstance = await paypal.createInstance({
+          clientId,
+          components: ["paypal-payments", "venmo-payments", "paypal-messages"],
+          pageType: "checkout",
+        });
+
+        sdkInstance.createPayPalMessages();
+
+        const methods = await sdkInstance.findEligibleMethods({ currencyCode: "USD" });
+
+        const paypalBtn = document.querySelector("paypal-button");
+        const venmoBtn = document.querySelector("venmo-button");
+
+        if (methods.isEligible("paypal")) {
+          const session = sdkInstance.createPayPalOneTimePaymentSession({
+            onApprove: async (data) => {
+              try {
+                const res = await fetch(`/api/orders/${data.orderId}/capture`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ items: readCart() }),
+                });
+                const capture = await res.json();
+                if (!res.ok || capture.status !== "COMPLETED") {
+                  const issue = (capture.details && capture.details[0] && capture.details[0].issue) || capture.message || "Payment capture failed";
+                  throw new Error(issue);
+                }
+                localStorage.removeItem("ember-oak-cart");
+                location.href = `/thank-you?order=${capture.id}`;
+              } catch (err) {
+                showError(err.message || "Payment failed. Please try again.");
+              }
+            },
+            onCancel: () => {
+              console.log("PayPal payment cancelled by buyer");
+            },
+            onError: (error) => {
+              console.error("PayPal error:", error);
+              showError((error && error.message) || "A payment error occurred. Please try again.");
+            },
           });
-      },
-    }).render("#paypal-button-container");
+
+          if (paypalBtn) {
+            paypalBtn.addEventListener("click", async () => {
+              try {
+                await session.start({ presentationMode: "auto" }, createOrder());
+              } catch (err) {
+                console.error("PayPal session start error:", err);
+                showError((err && err.message) || "Could not start PayPal payment. Please try again.");
+              }
+            });
+          }
+        } else if (paypalBtn) {
+          paypalBtn.style.display = "none";
+        }
+
+        if (methods.isEligible("venmo")) {
+          const session = sdkInstance.createVenmoOneTimePaymentSession({
+            onApprove: async (data) => {
+              try {
+                const res = await fetch(`/api/orders/${data.orderId}/capture`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ items: readCart() }),
+                });
+                const capture = await res.json();
+                if (!res.ok || capture.status !== "COMPLETED") {
+                  const issue = (capture.details && capture.details[0] && capture.details[0].issue) || capture.message || "Venmo payment capture failed";
+                  throw new Error(issue);
+                }
+                localStorage.removeItem("ember-oak-cart");
+                location.href = `/thank-you?order=${capture.id}`;
+              } catch (err) {
+                showError(err.message || "Venmo payment failed. Please try again.");
+              }
+            },
+            onCancel: () => {
+              console.log("Venmo payment cancelled by buyer");
+            },
+            onError: (error) => {
+              console.error("Venmo error:", error);
+              showError((error && error.message) || "A Venmo payment error occurred. Please try again.");
+            },
+          });
+
+          if (venmoBtn) {
+            venmoBtn.addEventListener("click", async () => {
+              try {
+                await session.start({ presentationMode: "auto" }, createOrder());
+              } catch (err) {
+                console.error("Venmo session start error:", err);
+                showError((err && err.message) || "Could not start Venmo payment. Please try again.");
+              }
+            });
+          }
+        } else if (venmoBtn) {
+          venmoBtn.style.display = "none";
+        }
+      } catch (err) {
+        console.error("PayPal SDK v6 init error:", err);
+      }
+    }
+
+    initPayPalCheckout();
   </script>
 </body>
 </html>
