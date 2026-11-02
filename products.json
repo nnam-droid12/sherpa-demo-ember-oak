@@ -10,6 +10,9 @@
     "rating": 4.8,
     "reviews": 212,
     "badge": "Best seller",
+    "availability": "in_stock",
+    "lead_time": "2 business days",
+    "lead_time_days": 2,
     "specs": ["Sleeps 2", "Packed weight 2.4 kg", "Floor area 2.9 m²", "Four-season rating"]
   },
   {
@@ -23,6 +26,9 @@
     "rating": 4.7,
     "reviews": 148,
     "badge": "New colour",
+    "availability": "in_stock",
+    "lead_time": "2 business days",
+    "lead_time_days": 2,
     "specs": ["65 litres", "Adjustable torso 41–53 cm", "Weight 1.9 kg", "Rain cover included"]
   },
   {
@@ -35,7 +41,10 @@
     "stock": 9,
     "rating": 4.9,
     "reviews": 96,
-    "badge": "Low stock",
+    "badge": "Preorder",
+    "availability": "preorder",
+    "lead_time": "3 business days",
+    "lead_time_days": 3,
     "specs": ["Comfort rating 15°F / −9°C", "800-fill down", "Weight 1.1 kg", "Compression sack included"]
   },
   {
@@ -49,6 +58,9 @@
     "rating": 4.6,
     "reviews": 331,
     "badge": "",
+    "availability": "in_stock",
+    "lead_time": "2 business days",
+    "lead_time_days": 2,
     "specs": ["Boils 1 L in 3.5 min", "Piezo ignition", "Fits standard canisters", "Pan included"]
   },
   {
@@ -62,6 +74,9 @@
     "rating": 4.5,
     "reviews": 487,
     "badge": "",
+    "availability": "in_stock",
+    "lead_time": "2 business days",
+    "lead_time_days": 2,
     "specs": ["400 lumens", "USB-C rechargeable", "IPX7 waterproof", "Red night mode"]
   },
   {
@@ -75,6 +90,9 @@
     "rating": 4.7,
     "reviews": 189,
     "badge": "Organic cotton",
+    "availability": "in_stock",
+    "lead_time": "2 business days",
+    "lead_time_days": 2,
     "specs": ["100% organic cotton", "8 oz brushed flannel", "Relaxed fit", "Machine washable"]
   }
 ]
