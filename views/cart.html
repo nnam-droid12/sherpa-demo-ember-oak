@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ember &amp; Oak — Cart &amp; Checkout</title>
+  <title>Your cart · Ember &amp; Oak</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="/styles.css">
   <script src="https://www.paypal.com/sdk/js?client-id={{PAYPAL_CLIENT_ID}}&currency=USD&disable-funding=venmo,paylater,card"></script>
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="/">Ember <span>&amp;</span> Oak</a>
-    <a href="/cart">Cart (<span id="cart-count">0</span>)</a>
-  </header>
+  {{HEADER}}
   <main class="wrap">
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a> / Cart</nav>
     <h1>Your cart</h1>
     <table class="cart-table">
       <thead><tr><th>Item</th><th>Qty</th><th>Price</th></tr></thead>
@@ -55,19 +55,20 @@
       <p id="status"></p>
     </section>
   </main>
-  <footer>Ember &amp; Oak is a fictional demo store. Payments run in the PayPal sandbox.</footer>
+  {{FOOTER}}
   <script src="/store.js"></script>
   <script>
     const items = readCart();
     document.getElementById("lines").innerHTML = items.length
-      ? items.map((i) => `<tr><td>${i.title}</td><td>${i.qty}</td><td>$${(Number(i.price) * i.qty).toFixed(2)}</td></tr>`).join("")
+      ? items.map((i) => `<tr>
+          <td><div class="line-item">${i.image ? `<img src="${i.image}" alt="">` : ""}<span>${i.title}</span></div></td>
+          <td>${i.qty}</td>
+          <td class="price">$${(Number(i.price) * i.qty).toFixed(2)}</td></tr>`).join("")
       : `<tr><td colspan="3">Your cart is empty. <a href="/">Keep shopping</a></td></tr>`;
     document.getElementById("total").textContent = cartTotal(items);
 
     fetch("/api/products").then((r) => r.json()).then((products) => {
-      document.getElementById("recs").innerHTML = products.slice(3).map((p) => `
-        <article class="card"><a href="/product/${p.id}"><img src="${p.image}" alt="${p.title}"></a>
-        <div class="body"><h3>${p.title}</h3><p class="price">$${p.price}</p></div></article>`).join("");
+      document.getElementById("recs").innerHTML = products.slice(3).map(productCard).join("");
     });
 
     paypal.Buttons({

@@ -2,55 +2,79 @@
   {
     "id": "ridgeline-2p-tent",
     "title": "Ridgeline 2P Alpine Tent",
-    "description": "A four-season, two-person tent with a storm-ready aluminium frame and two vestibules.",
+    "description": "A four-season, two-person tent with a storm-ready aluminium frame, two vestibules and a snow-shedding dome built for shoulder-season ridgelines.",
     "price": "349.00",
-    "image": "/img/tent.svg",
+    "image": "/img/ridgeline-2p-tent.jpg",
     "category": "Shelter",
-    "stock": 14
+    "stock": 14,
+    "rating": 4.8,
+    "reviews": 212,
+    "badge": "Best seller",
+    "specs": ["Sleeps 2", "Packed weight 2.4 kg", "Floor area 2.9 m²", "Four-season rating"]
   },
   {
     "id": "summit-65-pack",
     "title": "Summit 65L Expedition Pack",
-    "description": "Load-carrying backpack with an adjustable torso, hip-belt pockets and a waterproof base.",
+    "description": "A load-carrying pack with an adjustable torso, hip-belt pockets and a waterproof base for long days above the treeline.",
     "price": "229.00",
-    "image": "/img/pack.svg",
+    "image": "/img/summit-65-pack.jpg",
     "category": "Packs",
-    "stock": 22
+    "stock": 22,
+    "rating": 4.7,
+    "reviews": 148,
+    "badge": "New colour",
+    "specs": ["65 litres", "Adjustable torso 41–53 cm", "Weight 1.9 kg", "Rain cover included"]
   },
   {
     "id": "cinder-down-bag",
     "title": "Cinder 15°F Down Sleeping Bag",
-    "description": "800-fill responsibly sourced down, draft collar and a full-length two-way zip.",
+    "description": "800-fill responsibly sourced down, a draft collar and a full-length two-way zip. Warm when it counts, packs to the size of a loaf.",
     "price": "289.00",
-    "image": "/img/bag.svg",
+    "image": "/img/cinder-down-bag.jpg",
     "category": "Sleep",
-    "stock": 9
+    "stock": 9,
+    "rating": 4.9,
+    "reviews": 96,
+    "badge": "Low stock",
+    "specs": ["Comfort rating 15°F / −9°C", "800-fill down", "Weight 1.1 kg", "Compression sack included"]
   },
   {
     "id": "kindle-camp-stove",
-    "title": "Kindle Two-Burner Camp Stove",
-    "description": "Wind-shielded propane stove with independent simmer control on each burner.",
+    "title": "Kindle Canister Stove Kit",
+    "description": "A compact canister stove with a wide pot support and fine simmer control, packed with a non-stick pan for real camp breakfasts.",
     "price": "89.00",
-    "image": "/img/stove.svg",
+    "image": "/img/kindle-camp-stove.jpg",
     "category": "Kitchen",
-    "stock": 40
+    "stock": 40,
+    "rating": 4.6,
+    "reviews": 331,
+    "badge": "",
+    "specs": ["Boils 1 L in 3.5 min", "Piezo ignition", "Fits standard canisters", "Pan included"]
   },
   {
     "id": "trailmark-headlamp",
     "title": "Trailmark 400 Headlamp",
-    "description": "Rechargeable 400-lumen headlamp with red night mode and lockout.",
+    "description": "A rechargeable 400-lumen headlamp with an aluminium body, red night mode and a lockout so it never switches on in your pack.",
     "price": "39.00",
-    "image": "/img/lamp.svg",
+    "image": "/img/trailmark-headlamp.jpg",
     "category": "Lighting",
-    "stock": 75
+    "stock": 75,
+    "rating": 4.5,
+    "reviews": 487,
+    "badge": "",
+    "specs": ["400 lumens", "USB-C rechargeable", "IPX7 waterproof", "Red night mode"]
   },
   {
     "id": "oakleaf-flannel",
     "title": "Oakleaf Heavyweight Flannel",
-    "description": "Brushed organic cotton flannel shirt cut for layering at camp.",
+    "description": "Brushed organic cotton flannel cut for layering at camp, with a longer back hem and reinforced elbows.",
     "price": "68.00",
-    "image": "/img/flannel.svg",
+    "image": "/img/oakleaf-flannel.jpg",
     "category": "Apparel",
-    "stock": 31
+    "stock": 31,
+    "rating": 4.7,
+    "reviews": 189,
+    "badge": "Organic cotton",
+    "specs": ["100% organic cotton", "8 oz brushed flannel", "Relaxed fit", "Machine washable"]
   }
 ]

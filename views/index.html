@@ -3,34 +3,71 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ember &amp; Oak — Outdoor Gear</title>
+  <title>Ember &amp; Oak · Outdoor gear for the long way round</title>
+  <meta name="description" content="Tents, packs, sleep systems and camp kitchen gear built for weekends that turn into weeks.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="/">Ember <span>&amp;</span> Oak</a>
-    <a href="/cart">Cart (<span id="cart-count">0</span>)</a>
-  </header>
+  {{HEADER}}
   <section class="hero">
-    <h1>Gear for the long way round.</h1>
-    <p>Tents, packs and camp kit built for weekends that turn into weeks.</p>
+    <div class="hero-inner">
+      <p class="eyebrow">Autumn collection</p>
+      <h1>Gear for the long way round.</h1>
+      <p>Four-season shelters, expedition packs and warm sleep systems, tested on real ridgelines and backed by lifetime repairs.</p>
+      <a class="btn light" href="#shop">Shop the collection</a>
+    </div>
   </section>
-  <main class="wrap">
-    <h2>Shop the collection</h2>
-    <div class="grid" id="products"></div>
+
+  <main>
+    <section class="wrap">
+      <div class="categories">
+        <a class="category" href="#shop"><strong>Shelter</strong><span>Tents &amp; tarps</span></a>
+        <a class="category" href="#shop"><strong>Packs</strong><span>Day to expedition</span></a>
+        <a class="category" href="#shop"><strong>Sleep</strong><span>Bags &amp; pads</span></a>
+        <a class="category" href="#shop"><strong>Kitchen</strong><span>Stoves &amp; cookware</span></a>
+        <a class="category" href="#shop"><strong>Apparel</strong><span>Layers for camp</span></a>
+      </div>
+    </section>
+
+    <section class="wrap" id="shop">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Best sellers</p>
+          <h2>Shop the collection</h2>
+        </div>
+        <span class="muted" id="count"></span>
+      </div>
+      <div class="grid" id="products"></div>
+    </section>
+
+    <section class="wrap">
+      <div class="values">
+        <div class="value"><h3>Free shipping over $75</h3><p>Ships from our Bend, Oregon warehouse within two business days.</p></div>
+        <div class="value"><h3>60-day returns</h3><p>Used it once and it isn't right? Send it back, no questions asked.</p></div>
+        <div class="value"><h3>Repairs for life</h3><p>Our repair bench fixes zips, poles and tears at cost, for as long as you own it.</p></div>
+      </div>
+    </section>
+
+    <section class="wrap">
+      <div class="story">
+        <img src="/img/ridgeline-2p-tent.jpg" alt="Ridgeline tent pitched in fresh snow under pine trees" loading="lazy">
+        <div>
+          <p class="eyebrow">Field tested</p>
+          <h2>Built in a rain room. Proven in the snow.</h2>
+          <p class="muted">Every Ridgeline tent is seam-taped and storm-tested before it leaves the workshop. Our guides take each new design on a two-week trip before we sell a single one.</p>
+          <a class="btn outline" href="/product/ridgeline-2p-tent">Meet the Ridgeline 2P</a>
+        </div>
+      </div>
+    </section>
   </main>
-  <footer>Ember &amp; Oak is a fictional demo store. Payments run in the PayPal sandbox.</footer>
+  {{FOOTER}}
   <script src="/store.js"></script>
   <script>
     fetch("/api/products").then((r) => r.json()).then((products) => {
-      document.getElementById("products").innerHTML = products.map((p) => `
-        <article class="card">
-          <a href="/product/${p.id}"><img src="${p.image}" alt="${p.title}"></a>
-          <div class="body">
-            <h3><a href="/product/${p.id}">${p.title}</a></h3>
-            <p class="price">$${p.price}</p>
-          </div>
-        </article>`).join("");
+      document.getElementById("products").innerHTML = products.map(productCard).join("");
+      document.getElementById("count").textContent = `${products.length} products`;
     });
   </script>
 </body>

@@ -3,19 +3,20 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ember &amp; Oak — Thank you</title>
+  <title>Thank you · Ember &amp; Oak</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="/">Ember <span>&amp;</span> Oak</a>
-    <a href="/cart">Cart (<span id="cart-count">0</span>)</a>
-  </header>
-  <main class="wrap">
-    <h1>Thank you for your order</h1>
-    <p>Your PayPal order <strong id="order"></strong> is confirmed. We will email you when it ships.</p>
-    <a class="btn" href="/">Back to the shop</a>
+  {{HEADER}}
+  <main class="wrap" style="max-width: 720px; text-align: center; padding-top: 80px; padding-bottom: 80px">
+    <p class="eyebrow">Order confirmed</p>
+    <h1>Thank you. Your gear is on its way.</h1>
+    <p class="muted">Your PayPal order <strong id="order"></strong> is confirmed. We'll email you tracking details when it ships, usually within two business days.</p>
+    <p><a class="btn" href="/">Continue shopping</a></p>
   </main>
+  {{FOOTER}}
   <script src="/store.js"></script>
   <script>
     document.getElementById("order").textContent = new URLSearchParams(location.search).get("order") || "";

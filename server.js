@@ -9,9 +9,14 @@ const products = require("./products.json");
 
 app.use(express.json());
 
+const partial = (name) => fs.readFileSync(path.join(__dirname, "views", "partials", name), "utf8");
+
 function page(name) {
   const html = fs.readFileSync(path.join(__dirname, "views", name), "utf8");
-  return html.replaceAll("{{PAYPAL_CLIENT_ID}}", process.env.PAYPAL_CLIENT_ID || "sb");
+  return html
+    .replaceAll("{{HEADER}}", partial("header.html"))
+    .replaceAll("{{FOOTER}}", partial("footer.html"))
+    .replaceAll("{{PAYPAL_CLIENT_ID}}", process.env.PAYPAL_CLIENT_ID || "sb");
 }
 
 async function accessToken() {

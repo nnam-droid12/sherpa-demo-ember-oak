@@ -3,39 +3,63 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ember &amp; Oak — Product</title>
+  <title>Ember &amp; Oak · Product</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="/">Ember <span>&amp;</span> Oak</a>
-    <a href="/cart">Cart (<span id="cart-count">0</span>)</a>
-  </header>
+  {{HEADER}}
   <main class="wrap">
+    <nav class="breadcrumb" id="crumbs" aria-label="Breadcrumb"><a href="/">Home</a></nav>
     <div class="product" id="product"></div>
+
+    <section style="margin-top: 56px">
+      <div class="section-head"><h2>You might also like</h2></div>
+      <div class="grid" id="related"></div>
+    </section>
   </main>
-  <footer>Ember &amp; Oak is a fictional demo store. Payments run in the PayPal sandbox.</footer>
+  {{FOOTER}}
   <script src="/store.js"></script>
   <script>
     const id = location.pathname.split("/").pop();
-    fetch(`/api/products/${id}`).then((r) => r.json()).then((p) => {
-      document.title = `Ember & Oak — ${p.title}`;
-      document.getElementById("product").innerHTML = `
-        <img src="${p.image}" alt="${p.title}">
-        <div>
-          <p>${p.category}</p>
-          <h1>${p.title}</h1>
-          <p class="price">$${p.price}</p>
-          <p>${p.description}</p>
-          <p>${p.stock} in stock · Ships in 2 business days</p>
-          <button class="btn" id="add">Add to cart</button>
-          <a class="btn secondary" href="/cart">View cart</a>
-        </div>`;
-      document.getElementById("add").onclick = () => {
-        addToCart(p);
-        location.href = "/cart";
-      };
-    });
+    Promise.all([fetch(`/api/products/${id}`).then((r) => r.json()), fetch("/api/products").then((r) => r.json())])
+      .then(([p, all]) => {
+        document.title = `${p.title} · Ember & Oak`;
+        document.getElementById("crumbs").innerHTML = `<a href="/">Home</a> / <a href="/#shop">${p.category}</a> / ${p.title}`;
+        document.getElementById("product").innerHTML = `
+          <div class="product-media"><img src="${p.image}" alt="${p.title}"></div>
+          <div>
+            <p class="eyebrow">${p.category}</p>
+            <h1>${p.title}</h1>
+            ${stars(p.rating, p.reviews)}
+            <p class="price">$${p.price}</p>
+            <p>${p.description}</p>
+            <div class="buy-row">
+              <div class="qty" aria-label="Quantity">
+                <button type="button" id="minus" aria-label="Decrease">−</button>
+                <input id="qty" value="1" inputmode="numeric" aria-label="Quantity">
+                <button type="button" id="plus" aria-label="Increase">+</button>
+              </div>
+              <button class="btn" id="add">Add to cart</button>
+              <a class="btn outline" href="/cart">View cart</a>
+            </div>
+            <ul class="specs">${(p.specs || []).map((s) => `<li>${s}</li>`).join("")}</ul>
+            <div class="perks">
+              <span>✓ ${p.stock} in stock, ships in 2 business days</span>
+              <span>✓ Free shipping on orders over $75</span>
+              <span>✓ 60-day returns and lifetime repairs</span>
+            </div>
+          </div>`;
+        const qty = document.getElementById("qty");
+        document.getElementById("minus").onclick = () => (qty.value = Math.max(1, Number(qty.value) - 1));
+        document.getElementById("plus").onclick = () => (qty.value = Number(qty.value) + 1);
+        document.getElementById("add").onclick = () => {
+          addToCart(p, Math.max(1, Number(qty.value) || 1));
+          location.href = "/cart";
+        };
+        document.getElementById("related").innerHTML = all.filter((x) => x.id !== p.id).slice(0, 3).map(productCard).join("");
+      });
   </script>
 </body>
 </html>
