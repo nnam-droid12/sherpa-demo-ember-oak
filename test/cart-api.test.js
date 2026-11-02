@@ -367,6 +367,15 @@ describe("PayPal Cart API v1 & Catalog Feed", () => {
   });
 
   it("POST /merchant-cart/{id}/checkout handles invalid cart and unapproved orders", async () => {
+    // 0. Checkout on unknown cart returns 404
+    const checkoutNotFoundRes = await fetch(`${baseUrl}/merchant-cart/cart_unknown/checkout`, {
+      method: "POST",
+    });
+    assert.strictEqual(checkoutNotFoundRes.status, 404);
+    const notFoundErr = await checkoutNotFoundRes.json();
+    assert.strictEqual(notFoundErr.name, "CART_NOT_FOUND");
+    assert.ok(notFoundErr.debug_id);
+
     // 1. Checkout on INVALID cart returns 200 with cart and issues
     const createInvalid = await fetch(`${baseUrl}/merchant-cart`, {
       method: "POST",
