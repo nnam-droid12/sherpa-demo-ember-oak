@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="/styles.css">
+  <script async src="https://www.sandbox.paypal.com/web-sdk/v6/core"></script>
 </head>
 <body>
   {{HEADER}}
@@ -25,16 +26,20 @@
     const id = location.pathname.split("/").pop();
     Promise.all([fetch(`/api/products/${id}`).then((r) => r.json()), fetch("/api/products").then((r) => r.json())])
       .then(([p, all]) => {
-        document.title = `${p.title} · Ember & Oak`;
-        document.getElementById("crumbs").innerHTML = `<a href="/">Home</a> / <a href="/#shop">${p.category}</a> / ${p.title}`;
+        if (!p || p.error) return;
+        document.title = `${p.title || "Product"} · Ember & Oak`;
+        document.getElementById("crumbs").innerHTML = `<a href="/">Home</a> / <a href="/#shop">${p.category || "Shop"}</a> / ${p.title || ""}`;
         document.getElementById("product").innerHTML = `
-          <div class="product-media"><img src="${p.image}" alt="${p.title}"></div>
+          <div class="product-media"><img src="${p.image || ""}" alt="${p.title || ""}"></div>
           <div>
-            <p class="eyebrow">${p.category}</p>
-            <h1>${p.title}</h1>
+            <p class="eyebrow">${p.category || ""}</p>
+            <h1>${p.title || ""}</h1>
             ${stars(p.rating, p.reviews)}
-            <p class="price">$${p.price}</p>
-            <p>${p.description}</p>
+            <p class="price">$${p.price || "0.00"}</p>
+            <div class="paylater-wrap" style="margin: 8px 0 16px;">
+              <paypal-message id="product-paypal-message" auto-bootstrap amount="${p.price || "0.00"}" currency-code="USD"></paypal-message>
+            </div>
+            <p>${p.description || ""}</p>
             <div class="buy-row">
               <div class="qty" aria-label="Quantity">
                 <button type="button" id="minus" aria-label="Decrease">−</button>
@@ -46,20 +51,67 @@
             </div>
             <ul class="specs">${(p.specs || []).map((s) => `<li>${s}</li>`).join("")}</ul>
             <div class="perks">
-              <span>✓ ${p.stock} in stock, ships in 2 business days</span>
+              <span>✓ ${p.stock || 0} in stock, ships in 2 business days</span>
               <span>✓ Free shipping on orders over $75</span>
               <span>✓ 60-day returns and lifetime repairs</span>
             </div>
           </div>`;
+
+        initProductPaypalMessages(p.price || "0.00");
+
         const qty = document.getElementById("qty");
-        document.getElementById("minus").onclick = () => (qty.value = Math.max(1, Number(qty.value) - 1));
-        document.getElementById("plus").onclick = () => (qty.value = Number(qty.value) + 1);
+        const updateMsg = () => {
+          const msg = document.getElementById("product-paypal-message");
+          if (msg) {
+            msg.amount = (Number(p.price || 0) * (Math.max(1, Number(qty.value) || 1))).toFixed(2);
+          }
+        };
+
+        document.getElementById("minus").onclick = () => {
+          qty.value = Math.max(1, (Number(qty.value) || 1) - 1);
+          updateMsg();
+        };
+        document.getElementById("plus").onclick = () => {
+          qty.value = (Number(qty.value) || 0) + 1;
+          updateMsg();
+        };
+        qty.oninput = updateMsg;
+
         document.getElementById("add").onclick = () => {
           addToCart(p, Math.max(1, Number(qty.value) || 1));
           location.href = "/cart";
         };
-        document.getElementById("related").innerHTML = all.filter((x) => x.id !== p.id).slice(0, 3).map(productCard).join("");
+        document.getElementById("related").innerHTML = (all || []).filter((x) => x && x.id !== p.id).slice(0, 3).map(productCard).join("");
       });
+
+    async function initProductPaypalMessages(price) {
+      function getPayPal() {
+        if (window.paypal && typeof window.paypal.createInstance === "function") {
+          return Promise.resolve(window.paypal);
+        }
+        return new Promise((resolve) => {
+          const interval = setInterval(() => {
+            if (window.paypal && typeof window.paypal.createInstance === "function") {
+              clearInterval(interval);
+              resolve(window.paypal);
+            }
+          }, 50);
+        });
+      }
+
+      try {
+        const paypal = await getPayPal();
+        const clientId = "{{PAYPAL_CLIENT_ID}}";
+        const sdkInstance = await paypal.createInstance({
+          clientId,
+          components: ["paypal-messages"],
+          pageType: "product-details",
+        });
+        sdkInstance.createPayPalMessages();
+      } catch (err) {
+        console.error("PayPal messages init error:", err);
+      }
+    }
   </script>
 </body>
 </html>
