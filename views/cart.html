@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="/styles.css">
-  <script async src="https://www.sandbox.paypal.com/web-sdk/v6/core" onload="initPayPal()"></script>
+  <script async src="https://www.sandbox.paypal.com/web-sdk/v6/core" onload="initPayPal()" onerror="handlePaymentError('PayPal checkout could not be loaded. Please try again.')"></script>
 </head>
 <body>
   {{HEADER}}
@@ -34,7 +34,11 @@
             <paypal-button type="pay" class="paypal-gold"></paypal-button>
             <venmo-button type="pay" class="venmo-blue"></venmo-button>
           </div>
-          <p id="status" role="alert"></p>
+          <div id="status" role="alert" class="alert-box" style="display:none;">
+            <span class="alert-msg">Your payment could not be processed. Please try again.</span>
+            <button type="button" class="btn secondary" id="retry-btn">Retry</button>
+            <button type="button" class="btn outline" id="try-again-btn">Try again</button>
+          </div>
         </section>
       </aside>
     </div>
@@ -98,14 +102,21 @@
       const msg = message || "Your payment could not be processed. Please try again.";
       const statusEl = document.getElementById("status");
       if (!statusEl) return;
+      statusEl.style.display = "block";
       statusEl.setAttribute("role", "alert");
       statusEl.innerHTML = `
         <span class="alert-msg">${msg}</span>
-        <button type="button" class="btn secondary" id="retry-btn">Try again</button>
+        <div style="display:flex;gap:10px;margin-top:10px;align-items:center;flex-wrap:wrap;">
+          <button type="button" class="btn secondary" id="retry-btn">Retry</button>
+          <button type="button" class="btn outline" id="try-again-btn">Try again</button>
+        </div>
       `;
-      document.getElementById("retry-btn")?.addEventListener("click", () => {
+      const clearAlert = () => {
+        statusEl.style.display = "none";
         statusEl.innerHTML = "";
-      });
+      };
+      document.getElementById("retry-btn")?.addEventListener("click", clearAlert);
+      document.getElementById("try-again-btn")?.addEventListener("click", clearAlert);
     }
 
     function handlePaymentError(err) {
@@ -165,6 +176,9 @@
       }
     }
 
+    window.handleApprove = handleApprove;
+    window.handleCancel = handleCancel;
+
     function createOrder() {
       const cart = readCart();
       if (!cart || cart.length === 0) {
@@ -192,6 +206,15 @@
         });
     }
 
+    window.createOrder = createOrder;
+
+    const urlParams = new URLSearchParams(location.search);
+    if (urlParams.get("error") || urlParams.get("err") || urlParams.get("error_code")) {
+      handlePaymentError(urlParams.get("error") || urlParams.get("err") || urlParams.get("error_code"));
+    } else if (urlParams.get("cancel") || urlParams.get("canceled")) {
+      showError("Your payment was cancelled. Please try again or choose another payment method.");
+    }
+
     async function getPayPalSDK() {
       if (window.paypal && window.paypal.createInstance) {
         return window.paypal;
@@ -211,12 +234,15 @@
       });
     }
 
+    let paypalSession = null;
+    let venmoSession = null;
     let isInitialized = false;
+
     async function initPayPal() {
       if (isInitialized) return;
+      isInitialized = true;
       try {
         await getPayPalSDK();
-        isInitialized = true;
         const clientId = "{{PAYPAL_CLIENT_ID}}";
         const sdkInstance = await window.paypal.createInstance({
           clientId,
@@ -228,34 +254,17 @@
 
         const methods = await sdkInstance.findEligibleMethods({ currencyCode: "USD" });
 
-        const session = sdkInstance.createPayPalOneTimePaymentSession({
+        paypalSession = sdkInstance.createPayPalOneTimePaymentSession({
           onApprove: handleApprove,
           onCancel: handleCancel,
           onError: handlePaymentError,
         });
-        const paypalBtn = document.querySelector("paypal-button");
-        paypalBtn?.addEventListener("click", async () => {
-          try {
-            await session.start({ presentationMode: "auto" }, createOrder());
-          } catch (err) {
-            handlePaymentError(err);
-          }
-        });
 
         if (methods && methods.isEligible("venmo")) {
-          const venmoSession = sdkInstance.createVenmoOneTimePaymentSession({
+          venmoSession = sdkInstance.createVenmoOneTimePaymentSession({
             onApprove: handleApprove,
             onCancel: handleCancel,
             onError: handlePaymentError,
-          });
-          const venmoBtn = document.querySelector("venmo-button");
-          venmoBtn?.addEventListener("click", async () => {
-            try {
-              const session = venmoSession;
-              await session.start({ presentationMode: "auto" }, createOrder());
-            } catch (err) {
-              handlePaymentError(err);
-            }
           });
         } else {
           const venmoBtn = document.querySelector("venmo-button");
@@ -265,6 +274,38 @@
         console.error("PayPal init error:", err);
       }
     }
+
+    const paypalBtn = document.querySelector("paypal-button");
+    paypalBtn?.addEventListener("click", async () => {
+      try {
+        if (!paypalSession) {
+          await initPayPal();
+        }
+        const session = paypalSession;
+        if (!session) {
+          throw new Error("PayPal payment could not be initialized. Please try again.");
+        }
+        await session.start({ presentationMode: "auto" }, createOrder());
+      } catch (err) {
+        handlePaymentError(err);
+      }
+    });
+
+    const venmoBtn = document.querySelector("venmo-button");
+    venmoBtn?.addEventListener("click", async () => {
+      try {
+        if (!venmoSession) {
+          await initPayPal();
+        }
+        const session = venmoSession;
+        if (!session) {
+          throw new Error("Venmo payment is not eligible or could not be initialized.");
+        }
+        await session.start({ presentationMode: "auto" }, createOrder());
+      } catch (err) {
+        handlePaymentError(err);
+      }
+    });
 
     initPayPal();
     window.initPayPal = initPayPal;

@@ -10,7 +10,10 @@
     "rating": 4.8,
     "reviews": 212,
     "badge": "Best seller",
-    "specs": ["Sleeps 2", "Packed weight 2.4 kg", "Floor area 2.9 m²", "Four-season rating"]
+    "specs": ["Sleeps 2", "Packed weight 2.4 kg", "Floor area 2.9 m²", "Four-season rating"],
+    "availability": "in_stock",
+    "lead_time": "2 business days",
+    "lead_time_days": 0
   },
   {
     "id": "summit-65-pack",
@@ -23,7 +26,10 @@
     "rating": 4.7,
     "reviews": 148,
     "badge": "New colour",
-    "specs": ["65 litres", "Adjustable torso 41–53 cm", "Weight 1.9 kg", "Rain cover included"]
+    "specs": ["65 litres", "Adjustable torso 41–53 cm", "Weight 1.9 kg", "Rain cover included"],
+    "availability": "preorder",
+    "lead_time": "3 days",
+    "lead_time_days": 3
   },
   {
     "id": "cinder-down-bag",
@@ -36,7 +42,10 @@
     "rating": 4.9,
     "reviews": 96,
     "badge": "Low stock",
-    "specs": ["Comfort rating 15°F / −9°C", "800-fill down", "Weight 1.1 kg", "Compression sack included"]
+    "specs": ["Comfort rating 15°F / −9°C", "800-fill down", "Weight 1.1 kg", "Compression sack included"],
+    "availability": "in_stock",
+    "lead_time": "2 business days",
+    "lead_time_days": 0
   },
   {
     "id": "kindle-camp-stove",
@@ -49,7 +58,10 @@
     "rating": 4.6,
     "reviews": 331,
     "badge": "",
-    "specs": ["Boils 1 L in 3.5 min", "Piezo ignition", "Fits standard canisters", "Pan included"]
+    "specs": ["Boils 1 L in 3.5 min", "Piezo ignition", "Fits standard canisters", "Pan included"],
+    "availability": "in_stock",
+    "lead_time": "2 business days",
+    "lead_time_days": 0
   },
   {
     "id": "trailmark-headlamp",
@@ -62,7 +74,10 @@
     "rating": 4.5,
     "reviews": 487,
     "badge": "",
-    "specs": ["400 lumens", "USB-C rechargeable", "IPX7 waterproof", "Red night mode"]
+    "specs": ["400 lumens", "USB-C rechargeable", "IPX7 waterproof", "Red night mode"],
+    "availability": "in_stock",
+    "lead_time": "2 business days",
+    "lead_time_days": 0
   },
   {
     "id": "oakleaf-flannel",
@@ -75,6 +90,9 @@
     "rating": 4.7,
     "reviews": 189,
     "badge": "Organic cotton",
-    "specs": ["100% organic cotton", "8 oz brushed flannel", "Relaxed fit", "Machine washable"]
+    "specs": ["100% organic cotton", "8 oz brushed flannel", "Relaxed fit", "Machine washable"],
+    "availability": "in_stock",
+    "lead_time": "2 business days",
+    "lead_time_days": 0
   }
 ]
