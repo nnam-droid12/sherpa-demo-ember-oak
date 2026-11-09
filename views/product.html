@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="/styles.css">
+  <script async src="https://www.sandbox.paypal.com/web-sdk/v6/core"></script>
 </head>
 <body>
   {{HEADER}}
@@ -34,6 +35,9 @@
             <h1>${p.title}</h1>
             ${stars(p.rating, p.reviews)}
             <p class="price">$${p.price}</p>
+            <div class="pay-later-wrap">
+              <paypal-message auto-bootstrap amount="${p.price}" currency-code="USD"></paypal-message>
+            </div>
             <p>${p.description}</p>
             <div class="buy-row">
               <div class="qty" aria-label="Quantity">
@@ -51,9 +55,41 @@
               <span>✓ 60-day returns and lifetime repairs</span>
             </div>
           </div>`;
+
+        async function initPayLaterMessage() {
+          try {
+            while (!window.paypal || !window.paypal.createInstance) {
+              await new Promise((r) => setTimeout(r, 50));
+            }
+            const sdkInstance = await window.paypal.createInstance({
+              clientId: "{{PAYPAL_CLIENT_ID}}",
+              components: ["paypal-messages"],
+            });
+            sdkInstance.createPayPalMessages();
+          } catch (e) {
+            console.error("PayPal Messages error:", e);
+          }
+        }
+        initPayLaterMessage();
+
         const qty = document.getElementById("qty");
-        document.getElementById("minus").onclick = () => (qty.value = Math.max(1, Number(qty.value) - 1));
-        document.getElementById("plus").onclick = () => (qty.value = Number(qty.value) + 1);
+        const updateMessageAmount = () => {
+          const msg = document.querySelector("paypal-message");
+          if (msg) {
+            const count = Math.max(1, Number(qty.value) || 1);
+            const totalAmount = (Number(p.price) * count).toFixed(2);
+            msg.setAttribute("amount", totalAmount);
+            msg.amount = totalAmount;
+          }
+        };
+        document.getElementById("minus").onclick = () => {
+          qty.value = Math.max(1, Number(qty.value) - 1);
+          updateMessageAmount();
+        };
+        document.getElementById("plus").onclick = () => {
+          qty.value = Number(qty.value) + 1;
+          updateMessageAmount();
+        };
         document.getElementById("add").onclick = () => {
           addToCart(p, Math.max(1, Number(qty.value) || 1));
           location.href = "/cart";
