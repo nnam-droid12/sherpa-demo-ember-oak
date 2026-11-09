@@ -7,17 +7,37 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="/styles.css">
-  <script src="https://www.paypal.com/sdk/js?client-id={{PAYPAL_CLIENT_ID}}&currency=USD&disable-funding=venmo,paylater,card"></script>
+  <script async src="https://www.sandbox.paypal.com/web-sdk/v6/core" onload="initPayPal()"></script>
 </head>
 <body>
   {{HEADER}}
   <main class="wrap">
     <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a> / Cart</nav>
     <h1>Your cart</h1>
-    <table class="cart-table">
-      <thead><tr><th>Item</th><th>Qty</th><th>Price</th></tr></thead>
-      <tbody id="lines"></tbody>
-    </table>
+
+    <div class="cart-layout">
+      <div class="cart-main">
+        <table class="cart-table">
+          <thead><tr><th>Item</th><th>Qty</th><th>Price</th></tr></thead>
+          <tbody id="lines"></tbody>
+        </table>
+      </div>
+
+      <aside class="cart-summary">
+        <section class="checkout-actions">
+          <h3>Order total: $<span id="total">0.00</span></h3>
+          <div class="paylater-wrap">
+            <paypal-message id="cart-paylater-msg" auto-bootstrap amount="0.00" currency-code="USD"></paypal-message>
+          </div>
+          <p>Pay securely with PayPal or Venmo.</p>
+          <div id="payment-buttons" class="payment-buttons">
+            <paypal-button type="pay" class="paypal-gold"></paypal-button>
+            <venmo-button type="pay" class="venmo-blue"></venmo-button>
+          </div>
+          <p id="status" role="alert"></p>
+        </section>
+      </aside>
+    </div>
 
     <section class="panel">
       <h3>You might also like</h3>
@@ -47,13 +67,6 @@
       <p>Members get early access to new gear, trip guides and members-only meetups. It is free to join.</p>
       <p><input type="email" placeholder="you@example.com" aria-label="Email address"> <button class="btn secondary" type="button">Join</button></p>
     </section>
-
-    <section class="checkout-actions">
-      <h3>Order total: $<span id="total">0.00</span></h3>
-      <p>Pay securely with PayPal.</p>
-      <div id="paypal-button-container"></div>
-      <p id="status"></p>
-    </section>
   </main>
   {{FOOTER}}
   <script src="/store.js"></script>
@@ -61,37 +74,200 @@
     const items = readCart();
     document.getElementById("lines").innerHTML = items.length
       ? items.map((i) => `<tr>
-          <td><div class="line-item">${i.image ? `<img src="${i.image}" alt="">` : ""}<span>${i.title}</span></div></td>
-          <td>${i.qty}</td>
-          <td class="price">$${(Number(i.price) * i.qty).toFixed(2)}</td></tr>`).join("")
+          <td><div class="line-item">${i.image ? `<img src="${i.image}" alt="">` : ""}<span>${i.title || "Item"}</span></div></td>
+          <td>${i.qty || 1}</td>
+          <td class="price">$${((Number(i.price) || 0) * (Number(i.qty) || 1)).toFixed(2)}</td></tr>`).join("")
       : `<tr><td colspan="3">Your cart is empty. <a href="/">Keep shopping</a></td></tr>`;
-    document.getElementById("total").textContent = cartTotal(items);
 
-    fetch("/api/products").then((r) => r.json()).then((products) => {
-      document.getElementById("recs").innerHTML = products.slice(3).map(productCard).join("");
-    });
+    const total = cartTotal(items);
+    document.getElementById("total").textContent = total;
+    const payLaterMsg = document.getElementById("cart-paylater-msg");
+    if (payLaterMsg) {
+      payLaterMsg.amount = total;
+      payLaterMsg.setAttribute("amount", total);
+    }
 
-    paypal.Buttons({
-      createOrder: function () {
-        return fetch("/api/orders", {
+    fetch("/api/products")
+      .then((r) => r.json())
+      .then((products) => {
+        document.getElementById("recs").innerHTML = (products || []).slice(3).map(productCard).join("");
+      })
+      .catch((err) => console.error("Error loading recs:", err));
+
+    function showError(message) {
+      const msg = message || "Your payment could not be processed. Please try again.";
+      const statusEl = document.getElementById("status");
+      if (!statusEl) return;
+      statusEl.setAttribute("role", "alert");
+      statusEl.innerHTML = `
+        <span class="alert-msg">${msg}</span>
+        <button type="button" class="btn secondary" id="retry-btn">Try again</button>
+      `;
+      document.getElementById("retry-btn")?.addEventListener("click", () => {
+        statusEl.innerHTML = "";
+      });
+    }
+
+    function handlePaymentError(err) {
+      console.error("Payment error:", err);
+      let msg = "Your payment could not be processed. Please try again.";
+      let errStr = "";
+      try {
+        errStr = typeof err === "string" ? err : (err?.message || "") + JSON.stringify(err || {});
+      } catch {
+        errStr = String(err || "");
+      }
+
+      const isDeclined =
+        errStr.includes("INSTRUMENT_DECLINED") ||
+        errStr.toLowerCase().includes("declined") ||
+        err?.code === "INSTRUMENT_DECLINED" ||
+        err?.details?.[0]?.issue === "INSTRUMENT_DECLINED";
+
+      if (isDeclined) {
+        msg = "Your payment method was declined (INSTRUMENT_DECLINED). Please try again or choose a different payment method.";
+      } else if (typeof err === "string" && err.trim()) {
+        msg = err;
+      } else if (err?.message) {
+        msg = err.message;
+      } else if (err?.details?.[0]?.description) {
+        msg = err.details[0].description;
+      } else if (err?.error) {
+        msg = err.error;
+      }
+
+      showError(msg);
+    }
+
+    window.showError = showError;
+    window.handlePaymentError = handlePaymentError;
+
+    function handleCancel() {
+      console.log("Payment cancelled by buyer");
+    }
+
+    async function handleApprove(data) {
+      try {
+        const orderId = data?.orderId || data?.orderID;
+        if (!orderId) throw new Error("Missing order ID");
+        const res = await fetch(`/api/orders/${orderId}/capture`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ items: readCart(), total: cartTotal(readCart()) }),
-        }).then((r) => r.json()).then((order) => order.id);
-      },
-      onApprove: function (data) {
-        return fetch(`/api/orders/${data.orderID}/capture`, { method: "POST" })
-          .then((r) => r.json())
-          .then((capture) => {
-            if (capture.status !== "COMPLETED") throw new Error("capture failed");
-            localStorage.removeItem("ember-oak-cart");
-            location.href = `/thank-you?order=${capture.id}`;
-          })
-          .catch(function () {
-            document.body.innerHTML = "";
+        });
+        const capture = await res.json().catch(() => ({}));
+        if (!res.ok || capture.status !== "COMPLETED") {
+          throw capture;
+        }
+        localStorage.removeItem("ember-oak-cart");
+        renderCartCount();
+        location.href = `/thank-you?order=${capture.id || orderId}`;
+      } catch (err) {
+        handlePaymentError(err);
+      }
+    }
+
+    function createOrder() {
+      const cart = readCart();
+      if (!cart || cart.length === 0) {
+        handlePaymentError("Your cart is empty. Please add gear to your cart before checking out.");
+        return Promise.reject(new Error("Cart is empty"));
+      }
+      const cartItems = cart.map((i) => ({ id: i.id, qty: i.qty }));
+      return fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: cartItems }),
+      })
+        .then((r) => {
+          if (!r.ok) {
+            return r.json().then((err) => {
+              throw err;
+            });
+          }
+          return r.json();
+        })
+        .then((order) => ({ orderId: order.id }))
+        .catch((err) => {
+          handlePaymentError(err);
+          throw err;
+        });
+    }
+
+    async function getPayPalSDK() {
+      if (window.paypal && window.paypal.createInstance) {
+        return window.paypal;
+      }
+      return new Promise((resolve, reject) => {
+        let attempts = 0;
+        const interval = setInterval(() => {
+          attempts++;
+          if (window.paypal && window.paypal.createInstance) {
+            clearInterval(interval);
+            resolve(window.paypal);
+          } else if (attempts > 100) {
+            clearInterval(interval);
+            reject(new Error("PayPal SDK failed to load"));
+          }
+        }, 100);
+      });
+    }
+
+    let isInitialized = false;
+    async function initPayPal() {
+      if (isInitialized) return;
+      try {
+        await getPayPalSDK();
+        isInitialized = true;
+        const clientId = "{{PAYPAL_CLIENT_ID}}";
+        const sdkInstance = await window.paypal.createInstance({
+          clientId,
+          components: ["paypal-payments", "venmo-payments", "paypal-messages"],
+          pageType: "checkout",
+        });
+
+        sdkInstance.createPayPalMessages();
+
+        const methods = await sdkInstance.findEligibleMethods({ currencyCode: "USD" });
+
+        const session = sdkInstance.createPayPalOneTimePaymentSession({
+          onApprove: handleApprove,
+          onCancel: handleCancel,
+          onError: handlePaymentError,
+        });
+        const paypalBtn = document.querySelector("paypal-button");
+        paypalBtn?.addEventListener("click", async () => {
+          try {
+            await session.start({ presentationMode: "auto" }, createOrder());
+          } catch (err) {
+            handlePaymentError(err);
+          }
+        });
+
+        if (methods && methods.isEligible("venmo")) {
+          const venmoSession = sdkInstance.createVenmoOneTimePaymentSession({
+            onApprove: handleApprove,
+            onCancel: handleCancel,
+            onError: handlePaymentError,
           });
-      },
-    }).render("#paypal-button-container");
+          const venmoBtn = document.querySelector("venmo-button");
+          venmoBtn?.addEventListener("click", async () => {
+            try {
+              const session = venmoSession;
+              await session.start({ presentationMode: "auto" }, createOrder());
+            } catch (err) {
+              handlePaymentError(err);
+            }
+          });
+        } else {
+          const venmoBtn = document.querySelector("venmo-button");
+          if (venmoBtn) venmoBtn.hidden = true;
+        }
+      } catch (err) {
+        console.error("PayPal init error:", err);
+      }
+    }
+
+    initPayPal();
+    window.initPayPal = initPayPal;
   </script>
 </body>
 </html>
