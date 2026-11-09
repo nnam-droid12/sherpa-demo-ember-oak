@@ -203,8 +203,13 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 600; letter-spacing: -0.01e
 .panel h3 { margin-top: 0; }
 .panel input[type="email"] { padding: 11px 14px; border-radius: 999px; border: 1px solid var(--line); font: inherit; min-width: 240px; }
 
-.checkout-actions { margin: 32px 0 64px; padding: 26px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
-#paypal-button-container { max-width: 420px; }
+.checkout-actions { margin: 0 0 24px; padding: 26px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
+.cart-layout { display: grid; grid-template-columns: 1.4fr 1fr; gap: 32px; align-items: start; margin-bottom: 32px; }
+.payment-buttons { display: flex; flex-direction: column; gap: 12px; max-width: 420px; }
+paypal-button, venmo-button { width: 100%; max-width: 420px; display: block; }
+.paylater-wrap { margin: 12px 0; }
+.alert-box, #status[role="alert"]:not(:empty) { background: #fdf3f0; border: 1.5px solid var(--ember); border-radius: var(--radius); padding: 16px 20px; margin: 16px 0; color: var(--ink); }
+.alert-msg, #status .alert-msg { margin: 0 0 12px; font-weight: 500; display: block; }
 
 /* ---------- footer ---------- */
 .site-footer { background: #1d221e; color: #d9ddd5; margin-top: 64px; }
@@ -218,7 +223,7 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 600; letter-spacing: -0.01e
 
 @media (max-width: 860px) {
   .main-nav { display: none; }
-  .product, .story { grid-template-columns: 1fr; }
+  .cart-layout, .product, .story { grid-template-columns: 1fr; }
   .footer-inner { grid-template-columns: 1fr 1fr; }
   .hero { min-height: 460px; }
 }
@@ -226,13 +231,4 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 600; letter-spacing: -0.01e
   .wrap { padding: 28px 16px; }
   .header-inner { padding: 12px 16px; gap: 16px; }
   .specs { grid-template-columns: 1fr; }
-}
-
-/* Compact the summary area on small phones. */
-@media (max-width: 414px) {
-  .checkout-actions {
-    height: 0;
-    padding: 0;
-    overflow: hidden;
-  }
 }
