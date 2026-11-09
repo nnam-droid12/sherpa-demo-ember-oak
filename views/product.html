@@ -50,7 +50,7 @@
             </div>
             <ul class="specs">${(p.specs || []).map((s) => `<li>${s}</li>`).join("")}</ul>
             <div class="perks">
-              <span>✓ ${p.stock} in stock, ships in 2 business days</span>
+              <span>✓ ${p.availability === "preorder" ? "Preorder — ships in " + (p.lead_time || "2 weeks") : p.stock + " in stock, ships in 2 business days"}</span>
               <span>✓ Free shipping on orders over $75</span>
               <span>✓ 60-day returns and lifetime repairs</span>
             </div>

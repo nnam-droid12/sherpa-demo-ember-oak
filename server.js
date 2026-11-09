@@ -77,7 +77,8 @@ app.get("/api/products/:id", (req, res) => {
 });
 
 function getOrigin(req) {
-  const proto = req.headers["x-forwarded-proto"] || req.protocol || "http";
+  const forwardedProto = req.headers["x-forwarded-proto"];
+  const proto = (typeof forwardedProto === "string" ? forwardedProto.split(",")[0].trim() : null) || req.protocol || "http";
   const host = req.get("host") || `localhost:${PORT}`;
   return `${proto}://${host}`;
 }
@@ -94,7 +95,7 @@ app.get("/catalog.json", (req, res) => {
         value: typeof p.price === "number" ? p.price.toFixed(2) : parseFloat(p.price).toFixed(2),
       },
       availability: p.availability || (p.preorder ? "preorder" : (p.stock > 0 ? "in_stock" : "out_of_stock")),
-      image_url: `${origin}${p.image}`,
+      image_url: `${origin}${p.image.startsWith("/") ? "" : "/"}${p.image}`,
       url: `${origin}/product/${p.id}`,
       variants: p.variants || [],
       category: p.category,
@@ -186,7 +187,33 @@ async function buildAndValidateCart(cartId, body, origin, status = "CREATED") {
     for (const item of rawItems) {
       if (!item) continue;
       const itemId = item.item_id || item.id;
-      const qty = Math.max(1, parseInt(item.quantity ?? item.qty ?? 1, 10) || 1);
+      if (!itemId) {
+        validationIssues.push({
+          code: "INVENTORY_ISSUE",
+          type: "MISSING_FIELD",
+          message: "Each item must have an item_id.",
+          user_message: "An item in your cart is missing an identifier.",
+          field: "items",
+          context: { specific_issue: "MISSING_ITEM_ID" },
+          resolution_options: [{ action: "PROVIDE_MISSING_FIELD" }],
+        });
+        continue;
+      }
+
+      const rawQty = item.quantity ?? item.qty ?? 1;
+      const qty = parseInt(rawQty, 10);
+      if (isNaN(qty) || qty <= 0) {
+        validationIssues.push({
+          code: "INVENTORY_ISSUE",
+          type: "INVALID_DATA",
+          message: "Item quantity must be a positive integer.",
+          user_message: "Please choose a quantity of at least 1.",
+          field: "items",
+          context: { specific_issue: "INVALID_QUANTITY", item_id: itemId },
+        });
+      }
+      const effectiveQty = isNaN(qty) || qty <= 0 ? 1 : qty;
+
       const product = products.find((p) => p.id === itemId);
 
       if (!product) {
@@ -199,8 +226,8 @@ async function buildAndValidateCart(cartId, body, origin, status = "CREATED") {
           context: { specific_issue: "UNKNOWN_ITEM", item_id: itemId },
         });
         cartItems.push({
-          item_id: itemId || "unknown",
-          quantity: qty,
+          item_id: itemId,
+          quantity: effectiveQty,
           name: "Unknown Item",
           price: { currency_code: "USD", value: "0.00" },
         });
@@ -212,15 +239,15 @@ async function buildAndValidateCart(cartId, body, origin, status = "CREATED") {
       }
 
       const priceCents = Math.round(parseFloat(product.price) * 100);
-      totalCents += priceCents * qty;
+      totalCents += priceCents * effectiveQty;
 
       const formatted = {
         item_id: product.id,
-        quantity: qty,
+        quantity: effectiveQty,
         name: product.title,
         price: { currency_code: "USD", value: (priceCents / 100).toFixed(2) },
       };
-      if (item.variant_id !== undefined) {
+      if (item.variant_id) {
         formatted.variant_id = item.variant_id;
       }
       cartItems.push(formatted);
@@ -228,7 +255,7 @@ async function buildAndValidateCart(cartId, body, origin, status = "CREATED") {
   }
 
   const shipping = body.shipping_address;
-  if (!shipping || !shipping.address_line_1) {
+  if (!shipping || !shipping.address_line_1 || typeof shipping.address_line_1 !== "string" || !shipping.address_line_1.trim()) {
     validationIssues.push({
       code: "SHIPPING_ERROR",
       type: "MISSING_FIELD",
@@ -334,6 +361,13 @@ async function buildAndValidateCart(cartId, body, origin, status = "CREATED") {
 
 app.post("/merchant-cart", async (req, res) => {
   try {
+    if (!req.body || typeof req.body !== "object") {
+      return res.status(400).json({
+        name: "INVALID_REQUEST",
+        message: "Request body must be a JSON object.",
+        debug_id: crypto.randomUUID(),
+      });
+    }
     const cartId = `cart_${crypto.randomBytes(4).toString("hex")}`;
     const origin = getOrigin(req);
     const body = req.body || {};
@@ -371,6 +405,13 @@ app.put("/merchant-cart/:id", async (req, res) => {
       return res.status(404).json({
         name: "CART_NOT_FOUND",
         message: `Cart '${req.params.id}' was not found.`,
+        debug_id: crypto.randomUUID(),
+      });
+    }
+    if (!req.body || typeof req.body !== "object") {
+      return res.status(400).json({
+        name: "INVALID_REQUEST",
+        message: "Request body must be a JSON object.",
         debug_id: crypto.randomUUID(),
       });
     }
@@ -441,6 +482,33 @@ app.post("/merchant-cart/:id/checkout", async (req, res) => {
     }
 
     const orderData = await orderRes.json();
+
+    if (orderData.status === "COMPLETED") {
+      const capture = orderData.purchase_units?.[0]?.payments?.captures?.[0];
+      const capturedAmount = capture?.amount?.value;
+      const expectedAmount = cart.totals?.total?.value;
+
+      if (!capturedAmount || parseFloat(capturedAmount).toFixed(2) !== parseFloat(expectedAmount).toFixed(2)) {
+        return res.status(422).json({
+          name: "UNPROCESSABLE_ENTITY",
+          message: "Captured amount does not match expected cart total.",
+          debug_id: crypto.randomUUID(),
+        });
+      }
+
+      const origin = getOrigin(req);
+      cart.status = "COMPLETED";
+      cart.payment_confirmation = {
+        merchant_order_number: cart.payment_confirmation?.merchant_order_number || `EO-${cart.id.replace("cart_", "")}-${Date.now().toString(36).toUpperCase()}`,
+        order_review_page: `${origin}/thank-you?order=${orderId}`,
+      };
+
+      orders.set(orderId, { id: orderId, status: "PAID", amount: capturedAmount });
+      orderAmounts.set(orderId, capturedAmount);
+      carts.set(cart.id, cart);
+
+      return res.status(200).json(cart);
+    }
 
     if (orderData.status !== "APPROVED") {
       return res.status(422).json({

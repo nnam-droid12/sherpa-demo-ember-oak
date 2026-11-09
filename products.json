@@ -23,6 +23,10 @@
     "rating": 4.7,
     "reviews": 148,
     "badge": "New colour",
+    "availability": "preorder",
+    "preorder": true,
+    "lead_time": "2 weeks",
+    "lead_time_days": 14,
     "specs": ["65 litres", "Adjustable torso 41–53 cm", "Weight 1.9 kg", "Rain cover included"]
   },
   {
