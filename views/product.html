@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="/styles.css">
+  <script async src="https://www.sandbox.paypal.com/web-sdk/v6/core"></script>
 </head>
 <body>
   {{HEADER}}
@@ -34,6 +35,9 @@
             <h1>${p.title}</h1>
             ${stars(p.rating, p.reviews)}
             <p class="price">$${p.price}</p>
+            <div style="margin: 8px 0 16px;">
+              <paypal-message auto-bootstrap amount="${p.price}" currency-code="USD"></paypal-message>
+            </div>
             <p>${p.description}</p>
             <div class="buy-row">
               <div class="qty" aria-label="Quantity">
@@ -59,6 +63,23 @@
           location.href = "/cart";
         };
         document.getElementById("related").innerHTML = all.filter((x) => x.id !== p.id).slice(0, 3).map(productCard).join("");
+
+        const clientId = "{{PAYPAL_CLIENT_ID}}";
+        async function initPayLaterMessages() {
+          if (!window.paypal || typeof window.paypal.createInstance !== "function") {
+            await new Promise((resolve) => {
+              const script = document.querySelector('script[src*="web-sdk/v6/core"]');
+              if (script) script.addEventListener("load", resolve, { once: true });
+              else window.addEventListener("load", resolve, { once: true });
+            });
+          }
+          const sdkInstance = await window.paypal.createInstance({
+            clientId,
+            components: ["paypal-messages"],
+          });
+          sdkInstance.createPayPalMessages();
+        }
+        initPayLaterMessages().catch((e) => console.error("Pay Later message error:", e));
       });
   </script>
 </body>

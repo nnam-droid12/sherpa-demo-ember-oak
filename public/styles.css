@@ -203,8 +203,30 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 600; letter-spacing: -0.01e
 .panel h3 { margin-top: 0; }
 .panel input[type="email"] { padding: 11px 14px; border-radius: 999px; border: 1px solid var(--line); font: inherit; min-width: 240px; }
 
-.checkout-actions { margin: 32px 0 64px; padding: 26px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
-#paypal-button-container { max-width: 420px; }
+.checkout-actions { margin: 28px 0; padding: 26px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
+.checkout-total-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.checkout-total-row h3 { margin: 0; font-size: 1.4rem; }
+#paypal-button-container { display: flex; flex-direction: column; gap: 12px; max-width: 420px; margin-top: 14px; }
+paypal-button, venmo-button { display: block; width: 100%; min-height: 40px; }
+
+.alert {
+  padding: 14px 18px;
+  border-radius: var(--radius);
+  margin: 16px 0;
+  font-size: 0.95rem;
+}
+.alert p { margin: 0 0 10px; }
+.alert p:last-child { margin-bottom: 0; }
+.alert-error {
+  background: #fdf2f2;
+  border: 1px solid #f8b4b4;
+  color: #9b1c1c;
+}
+.alert-warning {
+  background: #fefce8;
+  border: 1px solid #fef08a;
+  color: #713f12;
+}
 
 /* ---------- footer ---------- */
 .site-footer { background: #1d221e; color: #d9ddd5; margin-top: 64px; }
@@ -228,11 +250,4 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 600; letter-spacing: -0.01e
   .specs { grid-template-columns: 1fr; }
 }
 
-/* Compact the summary area on small phones. */
-@media (max-width: 414px) {
-  .checkout-actions {
-    height: 0;
-    padding: 0;
-    overflow: hidden;
-  }
-}
+
